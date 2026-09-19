@@ -94,6 +94,23 @@
   .summary-bar { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: -8px 0 18px; animation: fadeInUp .5s ease both; animation-delay: .15s; }
   .pill { background: var(--chip-bg); border-radius: 999px; padding: 6px 12px; font-size: 0.78rem; font-weight: 600; }
   .pill.pill-accent { background: var(--accent-soft); color: var(--accent); }
+  #radio-player {
+    position: fixed; left: 12px; bottom: 12px; z-index: 500;
+    display: flex; align-items: center; gap: 8px;
+    background: var(--bg-elev); border: 1px solid var(--border); border-radius: 999px;
+    padding: 8px 12px 8px 8px; box-shadow: 0 6px 18px rgba(0,0,0,.25);
+    max-width: calc(100vw - 24px);
+  }
+  #radio-toggle { width: 34px; height: 34px; border-radius: 50%; padding: 0; font-size: 0.95rem; flex-shrink: 0; }
+  #radio-info { min-width: 0; }
+  #radio-station { font-size: 0.78rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px; }
+  #radio-sub { font-size: 0.68rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px; }
+  .radio-mini { background: var(--chip-bg); color: var(--fg); width: 26px; height: 26px; border-radius: 50%; padding: 0; font-size: 0.7rem; flex-shrink: 0; }
+  #radio-vol { width: 60px; accent-color: var(--accent); flex-shrink: 0; }
+  @media (max-width: 480px) {
+    #radio-info { display: none; }
+    #radio-player { padding: 8px; }
+  }
   @keyframes fadeInUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
   @keyframes chipPop { 0% { transform: scale(0.5); opacity: 0; } 70% { transform: scale(1.08); opacity: 1; } 100% { transform: scale(1); } }
   @keyframes celebrate { 0% { transform: scale(1); } 20% { transform: scale(1.015); } 40% { transform: scale(0.995); } 60% { transform: scale(1.01); } 100% { transform: scale(1); } }
@@ -132,6 +149,17 @@
   </header>
 
   <div id="summary-bar" class="summary-bar"></div>
+
+  <div id="radio-player">
+    <button id="radio-toggle" title="Reproducir/pausar">▶️</button>
+    <div id="radio-info">
+      <div id="radio-station">Radio apagada</div>
+      <div id="radio-sub">Toca para elegir emisora</div>
+    </div>
+    <button id="radio-prev" class="radio-mini" title="Emisora anterior">⏮</button>
+    <button id="radio-next" class="radio-mini" title="Siguiente emisora">⏭</button>
+    <input id="radio-vol" type="range" min="0" max="1" step="0.01" value="0.5" title="Volumen">
+  </div>
 
   <div id="banner"></div>
 
@@ -247,6 +275,124 @@
     playTone(784, 0.32, 0.28, 0.09);
   }
 
+  // ---------- Música ambiental de fondo (generada, sin enlaces externos) ----------
+  const AMBIENT_MOODS = [
+    { name: 'Chill Lounge', chordDur: 4.5, arpeggio: false, wave: 'sine',
+      chords: [[261.63,329.63,392.00,493.88],[220.00,261.63,329.63,392.00],[293.66,349.23,440.00,523.25],[196.00,246.94,293.66,349.23]] },
+    { name: 'Música de ascensor', chordDur: 3, arpeggio: true, wave: 'sine',
+      chords: [[261.63,329.63,392.00,493.88],[220.00,261.63,329.63,392.00],[293.66,349.23,440.00,523.25],[196.00,246.94,293.66,349.23]] },
+    { name: 'Sala de espera', chordDur: 5.5, arpeggio: false, wave: 'triangle',
+      chords: [[261.63,392.00],[220.00,329.63],[293.66,440.00],[196.00,293.66]] },
+  ];
+
+  const radioToggle = document.getElementById('radio-toggle');
+  const radioPrev = document.getElementById('radio-prev');
+  const radioNext = document.getElementById('radio-next');
+  const radioVol = document.getElementById('radio-vol');
+  const radioStationEl = document.getElementById('radio-station');
+  const radioSubEl = document.getElementById('radio-sub');
+
+  let ambientIndex = parseInt(localStorage.getItem('cs-squad-radio-index') || '0', 10);
+  if (isNaN(ambientIndex) || ambientIndex < 0 || ambientIndex >= AMBIENT_MOODS.length) ambientIndex = 0;
+  let ambientPlaying = false;
+  let ambientTimer = null;
+  let chordStep = 0;
+  let masterGain = null;
+  let radioVolValue = parseFloat(localStorage.getItem('cs-squad-radio-vol') || '0.35');
+  radioVol.value = radioVolValue;
+
+  function updateRadioLabels(sub) {
+    radioStationEl.textContent = AMBIENT_MOODS[ambientIndex].name;
+    radioSubEl.textContent = sub;
+  }
+  updateRadioLabels('Toca ▶ para escuchar');
+
+  function ensureMasterGain() {
+    unlockAudio();
+    if (!audioCtx) return null;
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    if (!masterGain) {
+      masterGain = audioCtx.createGain();
+      masterGain.gain.value = radioVolValue;
+      masterGain.connect(audioCtx.destination);
+    }
+    return masterGain;
+  }
+
+  function playChordStep() {
+    if (!ambientPlaying || !audioCtx) return;
+    const mood = AMBIENT_MOODS[ambientIndex];
+    const chord = mood.chords[chordStep % mood.chords.length];
+    chordStep++;
+    const now = audioCtx.currentTime;
+    const dur = mood.chordDur;
+    chord.forEach((freq) => {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = mood.wave;
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0, now);
+      gain.gain.linearRampToValueAtTime(0.05, now + 0.7);
+      gain.gain.linearRampToValueAtTime(0.05, now + dur - 0.6);
+      gain.gain.linearRampToValueAtTime(0, now + dur);
+      osc.connect(gain).connect(masterGain);
+      osc.start(now);
+      osc.stop(now + dur + 0.05);
+    });
+    if (mood.arpeggio) {
+      chord.forEach((freq, i) => {
+        const t = now + (i * dur) / (chord.length * 1.4);
+        const osc2 = audioCtx.createOscillator();
+        const gain2 = audioCtx.createGain();
+        osc2.type = 'triangle';
+        osc2.frequency.value = freq * 2;
+        gain2.gain.setValueAtTime(0, t);
+        gain2.gain.linearRampToValueAtTime(0.045, t + 0.02);
+        gain2.gain.exponentialRampToValueAtTime(0.0008, t + 0.6);
+        osc2.connect(gain2).connect(masterGain);
+        osc2.start(t);
+        osc2.stop(t + 0.65);
+      });
+    }
+    ambientTimer = setTimeout(playChordStep, dur * 1000 - 250);
+  }
+
+  function startAmbient() {
+    if (!ensureMasterGain()) return;
+    ambientPlaying = true;
+    chordStep = 0;
+    radioToggle.textContent = '⏸️';
+    updateRadioLabels('Sonando');
+    playChordStep();
+  }
+
+  function stopAmbient() {
+    ambientPlaying = false;
+    clearTimeout(ambientTimer);
+    radioToggle.textContent = '▶️';
+    updateRadioLabels('En pausa');
+  }
+
+  function switchMood(newIdx) {
+    const wasPlaying = ambientPlaying;
+    if (wasPlaying) stopAmbient();
+    ambientIndex = ((newIdx % AMBIENT_MOODS.length) + AMBIENT_MOODS.length) % AMBIENT_MOODS.length;
+    try { localStorage.setItem('cs-squad-radio-index', String(ambientIndex)); } catch (e) {}
+    if (wasPlaying) startAmbient(); else updateRadioLabels('Toca ▶ para escuchar');
+  }
+
+  radioToggle.addEventListener('click', () => {
+    if (ambientPlaying) stopAmbient(); else startAmbient();
+  });
+  radioPrev.addEventListener('click', () => switchMood(ambientIndex - 1));
+  radioNext.addEventListener('click', () => switchMood(ambientIndex + 1));
+
+  radioVol.addEventListener('input', () => {
+    radioVolValue = parseFloat(radioVol.value);
+    if (masterGain) masterGain.gain.value = radioVolValue;
+    try { localStorage.setItem('cs-squad-radio-vol', String(radioVolValue)); } catch (e) {}
+  });
+
   // ---------- Pantalla de entrada ----------
   const introOverlay = document.getElementById('intro-overlay');
   const introTitleEl = document.getElementById('intro-title');
@@ -272,6 +418,7 @@
     introOverlay.classList.add('hide');
     mainWrap.classList.add('reveal');
     setTimeout(() => { introOverlay.style.display = 'none'; }, 500);
+    startAmbient();
   }
   introOverlay.addEventListener('click', dismissIntro);
   introOverlay.addEventListener('touchstart', dismissIntro, { passive: true });
