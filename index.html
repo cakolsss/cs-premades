@@ -91,6 +91,9 @@
   .session-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border); }
   .creator-note { font-size: 0.75rem; color: var(--muted); }
   .full-tag { color: var(--danger); font-weight: 700; }
+  .summary-bar { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: -8px 0 18px; animation: fadeInUp .5s ease both; animation-delay: .15s; }
+  .pill { background: var(--chip-bg); border-radius: 999px; padding: 6px 12px; font-size: 0.78rem; font-weight: 600; }
+  .pill.pill-accent { background: var(--accent-soft); color: var(--accent); }
   @keyframes fadeInUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
   @keyframes chipPop { 0% { transform: scale(0.5); opacity: 0; } 70% { transform: scale(1.08); opacity: 1; } 100% { transform: scale(1); } }
   @keyframes celebrate { 0% { transform: scale(1); } 20% { transform: scale(1.015); } 40% { transform: scale(0.995); } 60% { transform: scale(1.01); } 100% { transform: scale(1); } }
@@ -127,6 +130,8 @@
     <h1>🎮 CS Squad — Reservas</h1>
     <p>Apúntate, monta una premade o propón partidas con la peña del Discord</p>
   </header>
+
+  <div id="summary-bar" class="summary-bar"></div>
 
   <div id="banner"></div>
 
@@ -313,6 +318,16 @@
     return '';
   }
 
+  function normalizeName(name) {
+    return (name || '').toLowerCase()
+      .replace(/[^a-z0-9]/g, '')
+      .replace(/0/g, 'o').replace(/1/g, 'i').replace(/3/g, 'e').replace(/4/g, 'a').replace(/5/g, 's').replace(/7/g, 't');
+  }
+  const FLAG_TARGETS = new Set(['papa', 'mania', 'themania', 'xian', 'tmania']);
+  function displayName(name) {
+    return FLAG_TARGETS.has(normalizeName(name)) ? '🇨🇳 ' + name : name;
+  }
+
   function normalize(entry) { return (typeof entry === 'string') ? { name: entry, uid: null } : entry; }
 
   function isUserInSession(s) {
@@ -327,7 +342,7 @@
     const chip = document.createElement('span');
     chip.className = 'chip';
     const span = document.createElement('span');
-    span.textContent = entry.name;
+    span.textContent = displayName(entry.name);
     chip.appendChild(span);
     if (entry.uid === getMyUid()) {
       const btn = document.createElement('button');
@@ -477,7 +492,7 @@
     const [y, m, d] = date.split('-').map(Number);
     const [hh, mm] = (time || '00:00').split(':').map(Number);
     const sessionDate = new Date(y, (m || 1) - 1, d || 1, hh || 0, mm || 0);
-    const deleteDate = new Date(sessionDate.getTime() + 24 * 60 * 60 * 1000);
+    const deleteDate = new Date(sessionDate.getTime() + 2 * 60 * 60 * 1000);
     return firebase.firestore.Timestamp.fromDate(deleteDate);
   }
 
@@ -488,10 +503,6 @@
     const totalMin = Math.floor(ms / 60000);
     const h = Math.floor(totalMin / 60);
     const m = totalMin % 60;
-    if (h >= 24) {
-      const d = Math.floor(h / 24);
-      return 'Se borra en ' + d + (d === 1 ? ' día' : ' días');
-    }
     if (h > 0) return 'Se borra en ' + h + 'h ' + m + 'm';
     return 'Se borra en ' + m + 'm';
   }
@@ -571,6 +582,7 @@
     if (!visible.length) {
       list.innerHTML = '<div class="empty-msg">Todavía no hay sesiones. ¡Crea la primera!</div>';
       firstRender = false;
+      renderSummary([]);
       return;
     }
     visible.forEach((d) => {
@@ -586,6 +598,39 @@
       list.appendChild(el);
     });
     firstRender = false;
+    renderSummary(visible);
+  }
+
+  function renderSummary(visible) {
+    const bar = document.getElementById('summary-bar');
+    bar.innerHTML = '';
+    const openMain = visible.filter((d) => !isFull(d.data)).length;
+    const openWait = visible.filter((d) => (d.data.waitlist || []).length < WAITLIST_CAP).length;
+    const otherGames = [...new Set(
+      visible.filter((d) => d.data.game && d.data.game !== 'CS2').map((d) => d.data.game)
+    )];
+
+    if (openMain > 0) {
+      const p = document.createElement('span');
+      p.className = 'pill';
+      p.textContent = '🟢 ' + openMain + (openMain === 1 ? ' premade con hueco' : ' premades con hueco');
+      bar.appendChild(p);
+    }
+    if (openWait > 0) {
+      const p = document.createElement('span');
+      p.className = 'pill';
+      p.textContent = '🕓 ' + openWait + (openWait === 1 ? ' con hueco de suplente' : ' con hueco de suplente');
+      bar.appendChild(p);
+    }
+    if (otherGames.length) {
+      const p = document.createElement('span');
+      p.className = 'pill pill-accent';
+      const texto = otherGames.length === 1
+        ? 'Hay una propuesta de ' + otherGames[0]
+        : 'Hay propuestas de ' + otherGames.join(' y ');
+      p.textContent = '🎲 ' + texto;
+      bar.appendChild(p);
+    }
   }
 
   setInterval(renderList, 60000);
