@@ -126,21 +126,81 @@
   }
   #intro-overlay.hide { opacity: 0; visibility: hidden; pointer-events: none; }
   #intro-icon { font-size: 3.4rem; animation: introBounce 1s ease infinite; margin-bottom: 6px; }
+  #sherry-dog { margin-top: 18px; cursor: pointer; animation: sherryIdle 2.4s ease-in-out infinite; opacity: 0; animation: fadeInUp .5s ease forwards, sherryIdle 2.4s ease-in-out infinite 1.3s; animation-delay: 1.1s, 1.1s; }
+  #sherry-dog.sherry-happy { animation: sherryWiggle .6s ease 2; }
+  #sherry-tongue { transform-origin: 100px 118px; animation: tongueWag 0.5s ease-in-out infinite; }
   #intro-title { display: flex; flex-wrap: wrap; justify-content: center; gap: 2px; font-weight: 800; font-size: 1.35rem; letter-spacing: .02em; color: var(--fg); max-width: 320px; text-align: center; }
   #intro-title span { display: inline-block; opacity: 0; animation: letterPop .4s ease forwards; }
   #intro-sub { margin-top: 10px; color: var(--accent); font-weight: 700; font-size: 0.85rem; letter-spacing: .12em; opacity: 0; animation: fadeInUp .5s ease forwards; animation-delay: .9s; }
-  #intro-hint { margin-top: 26px; color: var(--muted); font-size: 0.8rem; opacity: 0; animation: fadeInUp .5s ease forwards, hintPulse 1.6s ease-in-out infinite; animation-delay: 1.5s, 1.5s; }
+  #intro-hint { margin-top: 14px; color: var(--muted); font-size: 0.8rem; opacity: 0; animation: fadeInUp .5s ease forwards, hintPulse 1.6s ease-in-out infinite; animation-delay: 1.5s, 1.5s; }
+  #sherry-count { margin-top: 10px; color: var(--muted); font-size: 0.72rem; opacity: 0; animation: fadeInUp .5s ease forwards; animation-delay: 1.9s; }
   @keyframes hintPulse { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
   @keyframes introBounce { 0%, 100% { transform: translateY(0) rotate(-4deg); } 50% { transform: translateY(-10px) rotate(4deg); } }
   @keyframes letterPop { 0% { opacity: 0; transform: translateY(14px) scale(0.6); } 60% { opacity: 1; transform: translateY(-3px) scale(1.08); } 100% { opacity: 1; transform: translateY(0) scale(1); } }
+  @keyframes sherryIdle { 0%, 100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-4px) rotate(-1.5deg); } }
+  @keyframes sherryWiggle { 0%, 100% { transform: rotate(0deg) scale(1); } 25% { transform: rotate(-8deg) scale(1.05); } 75% { transform: rotate(8deg) scale(1.05); } }
+  @keyframes tongueWag { 0%, 100% { transform: rotate(-6deg); } 50% { transform: rotate(6deg); } }
+
+  .side-ad {
+    position: fixed; top: 50%; transform: translateY(-50%);
+    width: 130px; padding: 14px 10px; background: var(--bg-elev); border: 1px solid var(--border);
+    border-radius: 14px; text-align: center; z-index: 400; box-shadow: 0 6px 18px rgba(0,0,0,.2);
+    animation: fadeInUp .5s ease both;
+  }
+  .side-ad-left { left: 14px; }
+  .side-ad-right { right: 14px; }
+  .side-ad .ad-emoji { font-size: 2.1rem; display: block; margin-bottom: 6px; }
+  .side-ad .ad-title { font-size: 0.76rem; font-weight: 800; color: var(--fg); line-height: 1.2; }
+  .side-ad .ad-sub { font-size: 0.66rem; color: var(--muted); margin-top: 4px; line-height: 1.25; }
+  @media (max-width: 1150px) { .side-ad { display: none; } }
+  .ad-spin .ad-emoji { animation: adSpin 2.5s linear infinite; }
+  .ad-flash { animation: adFlash 1s steps(1) infinite; }
+  .ad-pulse .ad-emoji { animation: adPulse 1.1s ease-in-out infinite; }
+  .ad-wave .ad-emoji { animation: adWave 1.8s ease-in-out infinite; }
+  .ad-smoke .ad-emoji { animation: adSmoke 2.2s ease-in-out infinite; }
+  .ad-hearts .ad-emoji { animation: adHearts 1.3s ease-in-out infinite; }
+  .ad-bounce .ad-emoji { animation: adBounce 1s ease-in-out infinite; }
+  .ad-wobble .ad-emoji { animation: adWobble 1.6s ease-in-out infinite; }
+  .ad-shimmer .ad-emoji { animation: adShimmer 1.4s ease-in-out infinite; }
+  @keyframes adSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  @keyframes adFlash { 0%, 49% { filter: brightness(1); } 50%, 100% { filter: brightness(1.6) saturate(1.4); } }
+  @keyframes adPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.18); } }
+  @keyframes adWave { 0%, 100% { transform: rotate(-6deg); } 50% { transform: rotate(6deg); } }
+  @keyframes adSmoke { 0% { transform: translateY(0) scale(1); opacity: 1; } 50% { transform: translateY(-6px) scale(1.08); opacity: .7; } 100% { transform: translateY(0) scale(1); opacity: 1; } }
+  @keyframes adHearts { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-5px) scale(1.15); } }
+  @keyframes adBounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
+  @keyframes adWobble { 0%, 100% { transform: rotate(-5deg); } 50% { transform: rotate(5deg); } }
+  @keyframes adShimmer { 0%, 100% { filter: brightness(1) drop-shadow(0 0 0 transparent); transform: scale(1); } 50% { filter: brightness(1.35) drop-shadow(0 0 6px gold); transform: scale(1.1); } }
 </style>
 </head>
 <body>
 <div id="intro-overlay">
-  <div id="intro-icon">🎮</div>
   <div id="intro-title"></div>
   <div id="intro-sub">CS SQUAD</div>
+  <svg id="sherry-dog" viewBox="0 0 200 200" width="150" height="150" role="button" aria-label="Acaricia a Sherry">
+    <ellipse cx="100" cy="152" rx="55" ry="34" fill="#d99a5b"/>
+    <ellipse cx="60" cy="150" rx="11" ry="24" fill="#c9884a"/>
+    <ellipse cx="140" cy="150" rx="11" ry="24" fill="#c9884a"/>
+    <path d="M150 140 q34 -6 22 -34" stroke="#d99a5b" stroke-width="15" fill="none" stroke-linecap="round"/>
+    <circle cx="100" cy="92" r="46" fill="#e3ac6e"/>
+    <ellipse cx="64" cy="58" rx="18" ry="30" fill="#c9884a" transform="rotate(-18 64 58)"/>
+    <ellipse cx="136" cy="58" rx="18" ry="30" fill="#c9884a" transform="rotate(18 136 58)"/>
+    <circle cx="82" cy="88" r="6.5" fill="#2b2b2b"/>
+    <circle cx="118" cy="88" r="6.5" fill="#2b2b2b"/>
+    <circle cx="84" cy="86" r="2" fill="#fff"/>
+    <circle cx="120" cy="86" r="2" fill="#fff"/>
+    <ellipse cx="100" cy="108" rx="15" ry="10" fill="#fff"/>
+    <ellipse cx="100" cy="105" rx="6.5" ry="5" fill="#2b2b2b"/>
+    <path d="M90 115 Q100 124 110 115" stroke="#2b2b2b" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    <ellipse id="sherry-tongue" cx="100" cy="122" rx="6" ry="10" fill="#ff8a9c"/>
+  </svg>
+  <div id="intro-hint">Acaricia a Sherry para entrar</div>
+  <div id="sherry-count"></div>
 </div>
+</div>
+<div class="side-ad side-ad-left" id="ad-left"></div>
+<div class="side-ad side-ad-right" id="ad-right"></div>
+
 <div class="wrap" id="main-wrap">
   <header>
     <button id="theme-toggle" title="Cambiar tema">🌙</button>
@@ -393,10 +453,49 @@
     try { localStorage.setItem('cs-squad-radio-vol', String(radioVolValue)); } catch (e) {}
   });
 
+  // ---------- Publicidad lateral ----------
+  const ADS = [
+    { title: 'Kebab Hermanos Jerez', sub: 'El mejor kebab de la peña', emoji: '🥙', anim: 'ad-spin' },
+    { title: 'Armas y Explosivos Tiburón', sub: 'Todo lo que necesitas, sin preguntas', emoji: '💣', anim: 'ad-flash' },
+    { title: 'Quirófanos Asensi', sub: 'Arreglamos rodillas', emoji: '🦵', anim: 'ad-pulse' },
+    { title: 'Generalitat de Catalunya', sub: 'Lunnaris, presidenta', emoji: '🏛️', anim: 'ad-wave' },
+    { title: 'Con Pipa y Lopodo', sub: 'Consigue el sueño español', emoji: '💨', anim: 'ad-smoke' },
+    { title: 'Contactos Pasionales Tehrome', sub: 'Conexiones de verdad', emoji: '💕', anim: 'ad-hearts' },
+    { title: 'Panadería y Repostería Alecmay', sub: 'Recién horneado cada día', emoji: '🥖', anim: 'ad-bounce' },
+    { title: 'Asilo Cakols', sub: 'Especialistas en demencia senil', emoji: '🧓', anim: 'ad-wobble' },
+    { title: 'Bazar Xian', sub: 'Tu todo a cien de confianza', emoji: '🛍️', anim: 'ad-shimmer' },
+    { title: 'Guardería Feelise', sub: 'Especialistas en llorones', emoji: '👶', anim: 'ad-bounce' },
+    { title: 'Saunas Gorrino', sub: 'Vapor a tope', emoji: '🐷', anim: 'ad-smoke' },
+  ];
+
+  function renderAd(container, ad) {
+    container.className = 'side-ad ' + (container.classList.contains('side-ad-left') ? 'side-ad-left' : 'side-ad-right') + ' ' + ad.anim;
+    container.innerHTML = '<span class="ad-emoji">' + ad.emoji + '</span>' +
+      '<div class="ad-title">' + ad.title + '</div>' +
+      '<div class="ad-sub">' + ad.sub + '</div>';
+  }
+
+  const adLeft = document.getElementById('ad-left');
+  const adRight = document.getElementById('ad-right');
+  let adLeftIdx = 0;
+  let adRightIdx = Math.floor(ADS.length / 2);
+  renderAd(adLeft, ADS[adLeftIdx]);
+  renderAd(adRight, ADS[adRightIdx]);
+  setInterval(() => {
+    adLeftIdx = (adLeftIdx + 1) % ADS.length;
+    renderAd(adLeft, ADS[adLeftIdx]);
+  }, 4500);
+  setInterval(() => {
+    adRightIdx = (adRightIdx + 1) % ADS.length;
+    renderAd(adRight, ADS[adRightIdx]);
+  }, 5200);
+
   // ---------- Pantalla de entrada ----------
   const introOverlay = document.getElementById('intro-overlay');
   const introTitleEl = document.getElementById('intro-title');
   const mainWrap = document.getElementById('main-wrap');
+  const sherryDog = document.getElementById('sherry-dog');
+  const sherryCountEl = document.getElementById('sherry-count');
   const introText = 'RESERVA TU HUECO';
   introText.split('').forEach((ch, i) => {
     const span = document.createElement('span');
@@ -404,10 +503,12 @@
     span.style.animationDelay = (i * 0.045) + 's';
     introTitleEl.appendChild(span);
   });
-  const introHint = document.createElement('div');
-  introHint.id = 'intro-hint';
-  introHint.textContent = 'Toca para entrar';
-  introOverlay.appendChild(introHint);
+
+  const statsRef = db.collection('meta').doc('stats');
+  statsRef.onSnapshot((doc) => {
+    const n = (doc.exists && doc.data().sherryPets) || 0;
+    sherryCountEl.textContent = '🐾 Sherry acariciado ' + n + (n === 1 ? ' vez' : ' veces');
+  }, () => {});
 
   let introDismissed = false;
   function dismissIntro() {
@@ -415,14 +516,16 @@
     introDismissed = true;
     unlockAudio();
     playIntroSound();
+    sherryDog.classList.add('sherry-happy');
+    statsRef.set({ sherryPets: firebase.firestore.FieldValue.increment(1) }, { merge: true }).catch(() => {});
     introOverlay.classList.add('hide');
     mainWrap.classList.add('reveal');
     setTimeout(() => { introOverlay.style.display = 'none'; }, 500);
     startAmbient();
   }
-  introOverlay.addEventListener('click', dismissIntro);
-  introOverlay.addEventListener('touchstart', dismissIntro, { passive: true });
-  setTimeout(dismissIntro, 4500);
+  sherryDog.addEventListener('click', dismissIntro);
+  sherryDog.addEventListener('touchstart', dismissIntro, { passive: true });
+  setTimeout(dismissIntro, 9000);
 
   // ---------- Utilidades ----------
   function showBanner(msg) {
