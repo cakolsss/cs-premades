@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,19 +15,44 @@
     --accent-fg: #1a1200;
     --accent-soft: #3a2712;
     --danger: #ff6b6b;
+    --success: #3ad672;
+    --success-soft: #123a22;
     --slotA: #6ea8ff;
     --slotB: #ff8080;
     --chip-bg: #262a31;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   }
+  :root[data-theme="light"] {
+    --bg: #f4f5f7;
+    --bg-elev: #ffffff;
+    --fg: #1b1e24;
+    --muted: #6b7280;
+    --border: #e2e4e9;
+    --accent: #f5761a;
+    --accent-fg: #ffffff;
+    --accent-soft: #fef1e6;
+    --danger: #d64545;
+    --success: #1f9d52;
+    --success-soft: #e6f8ed;
+    --slotA: #3a7bd5;
+    --slotB: #d5473a;
+    --chip-bg: #eef0f3;
+  }
   * { box-sizing: border-box; }
-  body { margin: 0; background: var(--bg); color: var(--fg); padding: 20px 14px 60px; line-height: 1.4; }
+  body { margin: 0; background: var(--bg); color: var(--fg); padding: 20px 14px 60px; line-height: 1.4; transition: background .25s, color .25s; }
   .wrap { max-width: 760px; margin: 0 auto; }
-  header { text-align: center; margin-bottom: 22px; }
+  header { text-align: center; margin-bottom: 22px; position: relative; animation: fadeInUp .5s ease both; }
   header h1 { font-size: 1.6rem; margin: 0 0 4px; }
   header p { color: var(--muted); margin: 0; font-size: 0.95rem; }
+  #theme-toggle {
+    position: absolute; top: 0; right: 0;
+    background: var(--chip-bg); color: var(--fg); border: 1px solid var(--border);
+    border-radius: 999px; width: 38px; height: 38px; padding: 0; font-size: 1.1rem;
+  }
   #banner { display: none; background: var(--accent-soft); border: 1px solid var(--accent); color: var(--fg); padding: 10px 14px; border-radius: 14px; margin-bottom: 16px; font-size: 0.9rem; }
-  .card { background: var(--bg-elev); border: 1px solid var(--border); border-radius: 14px; padding: 18px; margin-bottom: 18px; }
+  .card { background: var(--bg-elev); border: 1px solid var(--border); border-radius: 14px; padding: 18px; margin-bottom: 18px; animation: fadeInUp .5s ease both; }
+  .card:nth-of-type(2) { animation-delay: .05s; }
+  .card:nth-of-type(3) { animation-delay: .1s; }
   .card h2 { margin: 0 0 14px; font-size: 1.05rem; }
   label { display: block; font-size: 0.8rem; color: var(--muted); margin-bottom: 4px; margin-top: 12px; }
   label:first-of-type { margin-top: 0; }
@@ -35,15 +60,16 @@
   input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
   .row { display: flex; gap: 10px; }
   .row > div { flex: 1; min-width: 0; }
-  button { cursor: pointer; border: none; border-radius: 10px; padding: 10px 16px; font-size: 0.9rem; font-weight: 600; background: var(--accent); color: var(--accent-fg); }
+  button { cursor: pointer; border: none; border-radius: 10px; padding: 10px 16px; font-size: 0.9rem; font-weight: 600; background: var(--accent); color: var(--accent-fg); transition: transform .1s; }
+  button:active { transform: scale(0.96); }
   button:disabled { opacity: 0.5; cursor: not-allowed; }
   button.small { padding: 5px 10px; font-size: 0.78rem; }
   button.full { width: 100%; margin-top: 16px; }
-  button.ghost-danger { background: transparent; color: var(--danger); border: 1px solid var(--danger); }
-  #hidden-otro { display: none; }
+  button.subtle { background: var(--chip-bg); color: var(--fg); }
   #sessions-list { display: flex; flex-direction: column; gap: 14px; }
   .empty-msg { color: var(--muted); text-align: center; padding: 20px 0; font-size: 0.9rem; }
-  .session-card { background: var(--bg-elev); border: 1px solid var(--border); border-radius: 14px; padding: 16px; }
+  .session-card { background: var(--bg-elev); border: 1px solid var(--border); border-radius: 14px; padding: 16px; animation: fadeInUp .4s ease both; transition: box-shadow .3s, border-color .3s; }
+  .session-card.just-completed { animation: fadeInUp .4s ease both, celebrate 1.1s ease; border-color: var(--success); box-shadow: 0 0 0 3px var(--success-soft); }
   .session-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
   .session-when { font-weight: 700; font-size: 1rem; }
   .session-when .rel { color: var(--accent); font-weight: 600; font-size: 0.8rem; margin-left: 6px; }
@@ -55,21 +81,27 @@
   .team-label.a { color: var(--slotA); }
   .team-label.b { color: var(--slotB); }
   .players { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
-  .chip { background: var(--chip-bg); border-radius: 999px; padding: 4px 6px 4px 12px; font-size: 0.82rem; display: flex; align-items: center; gap: 6px; }
+  .chip { background: var(--chip-bg); border-radius: 999px; padding: 4px 6px 4px 12px; font-size: 0.82rem; display: flex; align-items: center; gap: 6px; animation: chipPop .28s ease; }
   .chip button { background: transparent; color: var(--muted); padding: 0 4px; font-size: 0.9rem; font-weight: 700; border-radius: 50%; line-height: 1; }
   .chip button:hover { color: var(--danger); }
   .slot-empty { border: 1px dashed var(--border); border-radius: 999px; padding: 4px 12px; font-size: 0.82rem; color: var(--muted); }
   .join-row { display: flex; gap: 8px; margin-top: 8px; }
+  .waitlist-box { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border); }
+  .waitlist-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin-bottom: 6px; font-weight: 700; }
   .session-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border); }
   .creator-note { font-size: 0.75rem; color: var(--muted); }
   .full-tag { color: var(--danger); font-weight: 700; }
+  @keyframes fadeInUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes chipPop { 0% { transform: scale(0.5); opacity: 0; } 70% { transform: scale(1.08); opacity: 1; } 100% { transform: scale(1); } }
+  @keyframes celebrate { 0% { transform: scale(1); } 20% { transform: scale(1.015); } 40% { transform: scale(0.995); } 60% { transform: scale(1.01); } 100% { transform: scale(1); } }
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
+    <button id="theme-toggle" title="Cambiar tema">🌙</button>
     <h1>🎮 CS Squad — Reservas</h1>
-    <p>Apúntate, monta una premade o propón un 5vs5 con la peña del Discord</p>
+    <p>Apúntate, monta una premade o propón partidas con la peña del Discord</p>
   </header>
 
   <div id="banner"></div>
@@ -88,17 +120,12 @@
     </div>
     <label for="f-type">Tipo</label>
     <select id="f-type">
-      <option value="premadeA">Premade A (CS, 5 jugadores)</option>
-      <option value="premadeB">Premade B (CS, 5 jugadores)</option>
-      <option value="fivevfive">5 vs 5 interno (CS, 10 jugadores)</option>
-      <option value="otro">Otro juego</option>
+      <option value="premadeA">🔫 Premade A (CS2, 5)</option>
+      <option value="premadeB">🔫 Premade B (CS2, 5)</option>
+      <option value="fivevfive">🔫 5 vs 5 interno (CS2, 10)</option>
+      <option value="pummel">🥊 Pummel Party (10)</option>
+      <option value="picopark">🧩 Pico Park (10)</option>
     </select>
-    <div id="hidden-otro">
-      <div class="row">
-        <div><label for="f-game">Juego</label><input id="f-game" type="text" placeholder="Ej: Valorant"></div>
-        <div><label for="f-cap">Jugadores</label><input id="f-cap" type="number" min="1" max="20" value="5"></div>
-      </div>
-    </div>
     <label for="f-note">Nota (opcional)</label>
     <input id="f-note" type="text" placeholder="Ej: ranked, solo pistoleo, etc." maxlength="80">
     <button class="full" id="btn-create">Crear sesión</button>
@@ -114,7 +141,6 @@
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 <script>
-  // 1) PEGA AQUÍ TU CONFIGURACIÓN DE FIREBASE (paso 4 de las instrucciones)
   const firebaseConfig = {
     apiKey: "AIzaSyC6A3WQI6t7BXZs7AaNMgsCsWj6BlLkXFg",
     authDomain: "premades-cs.firebaseapp.com",
@@ -131,12 +157,62 @@
 
 <script>
 (function () {
+  const WAITLIST_CAP = 2;
+
   const TYPE_INFO = {
-    premadeA: { label: 'Premade A', game: 'Counter-Strike', capacity: 5, teams: false },
-    premadeB: { label: 'Premade B', game: 'Counter-Strike', capacity: 5, teams: false },
-    fivevfive: { label: '5 vs 5 interno', game: 'Counter-Strike', capacity: 10, teams: true },
+    premadeA:  { game: 'CS2', label: 'Premade A', icon: '🔫', capacity: 5,  teams: false },
+    premadeB:  { game: 'CS2', label: 'Premade B', icon: '🔫', capacity: 5,  teams: false },
+    fivevfive: { game: 'CS2', label: '5 vs 5',     icon: '🔫', capacity: 10, teams: true  },
+    pummel:    { game: 'Pummel Party', label: '',  icon: '🥊', capacity: 10, teams: false },
+    picopark:  { game: 'Pico Park',    label: '',  icon: '🧩', capacity: 10, teams: false },
   };
 
+  // ---------- Tema ----------
+  const root = document.documentElement;
+  const themeBtn = document.getElementById('theme-toggle');
+  function applyTheme(t) {
+    root.setAttribute('data-theme', t);
+    themeBtn.textContent = t === 'light' ? '☀️' : '🌙';
+  }
+  applyTheme(localStorage.getItem('cs-squad-theme') || 'dark');
+  themeBtn.addEventListener('click', () => {
+    const next = root.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+    applyTheme(next);
+    try { localStorage.setItem('cs-squad-theme', next); } catch (e) {}
+  });
+
+  // ---------- Sonidos ----------
+  let audioCtx = null;
+  function unlockAudio() {
+    if (!audioCtx) {
+      try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
+    }
+  }
+  ['click', 'keydown', 'touchstart'].forEach((ev) => document.addEventListener(ev, unlockAudio, { once: true }));
+
+  function playTone(freq, start, dur, vol) {
+    if (!audioCtx) return;
+    try {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0, audioCtx.currentTime + start);
+      gain.gain.linearRampToValueAtTime(vol, audioCtx.currentTime + start + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + start + dur);
+      osc.connect(gain).connect(audioCtx.destination);
+      osc.start(audioCtx.currentTime + start);
+      osc.stop(audioCtx.currentTime + start + dur + 0.05);
+    } catch (e) {}
+  }
+  function playJoinSound() { playTone(720, 0, 0.12, 0.08); }
+  function playCompleteSound() {
+    playTone(523, 0, 0.14, 0.09);
+    playTone(659, 0.12, 0.14, 0.09);
+    playTone(784, 0.24, 0.22, 0.1);
+  }
+
+  // ---------- Utilidades ----------
   function showBanner(msg) {
     const b = document.getElementById('banner');
     b.textContent = msg;
@@ -144,6 +220,15 @@
   }
 
   function getMyName() { return document.getElementById('my-name').value.trim(); }
+
+  function getMyUid() {
+    let uid = localStorage.getItem('cs-squad-uid');
+    if (!uid) {
+      uid = (crypto.randomUUID ? crypto.randomUUID() : (Date.now().toString(36) + Math.random().toString(36).slice(2)));
+      try { localStorage.setItem('cs-squad-uid', uid); } catch (err) {}
+    }
+    return uid;
+  }
 
   function fmtWhen(dateStr, timeStr) {
     if (!dateStr) return 'Sin fecha';
@@ -168,27 +253,37 @@
     return '';
   }
 
-  function renderChip(docId, teamKey, name, roster) {
+  function normalize(entry) { return (typeof entry === 'string') ? { name: entry, uid: null } : entry; }
+
+  function isUserInSession(s) {
+    const uid = getMyUid();
+    const pools = [s.players || [], s.teamA || [], s.teamB || [], s.waitlist || []];
+    return pools.some((pool) => pool.some((e) => normalize(e).uid === uid));
+  }
+
+  // ---------- Render de jugadores ----------
+  function renderChip(docId, teamKey, rawEntry) {
+    const entry = normalize(rawEntry);
     const chip = document.createElement('span');
     chip.className = 'chip';
     const span = document.createElement('span');
-    span.textContent = name;
+    span.textContent = entry.name;
     chip.appendChild(span);
-    if (name === getMyName()) {
+    if (entry.uid === getMyUid()) {
       const btn = document.createElement('button');
       btn.textContent = '×';
       btn.title = 'Salir';
-      btn.addEventListener('click', () => leaveSession(docId, teamKey, name, roster));
+      btn.addEventListener('click', () => leaveSession(docId, teamKey, rawEntry));
       chip.appendChild(btn);
     }
     return chip;
   }
 
-  function renderRoster(docId, teamKey, roster, capacity) {
+  function renderRoster(docId, teamKey, roster, capacity, s) {
     const box = document.createElement('div');
     const playersDiv = document.createElement('div');
     playersDiv.className = 'players';
-    roster.forEach((name) => playersDiv.appendChild(renderChip(docId, teamKey, name, roster)));
+    roster.forEach((entry) => playersDiv.appendChild(renderChip(docId, teamKey, entry)));
     for (let i = roster.length; i < capacity; i++) {
       const slot = document.createElement('span');
       slot.className = 'slot-empty';
@@ -196,23 +291,56 @@
       playersDiv.appendChild(slot);
     }
     box.appendChild(playersDiv);
-    if (roster.length < capacity) {
+    if (roster.length < capacity && !isUserInSession(s)) {
       const joinRow = document.createElement('div');
       joinRow.className = 'join-row';
       const btn = document.createElement('button');
       btn.className = 'small';
       btn.textContent = 'Unirme';
-      btn.addEventListener('click', () => joinSession(docId, teamKey, roster, capacity));
+      btn.addEventListener('click', () => joinSession(docId, teamKey, roster, capacity, s));
       joinRow.appendChild(btn);
       box.appendChild(joinRow);
     }
     return box;
   }
 
+  function renderWaitlist(docId, s) {
+    const waitlist = s.waitlist || [];
+    const box = document.createElement('div');
+    box.className = 'waitlist-box';
+    const label = document.createElement('div');
+    label.className = 'waitlist-label';
+    label.textContent = 'Suplentes (' + waitlist.length + '/' + WAITLIST_CAP + ')';
+    box.appendChild(label);
+    const row = document.createElement('div');
+    row.className = 'players';
+    waitlist.forEach((entry) => row.appendChild(renderChip(docId, 'waitlist', entry)));
+    for (let i = waitlist.length; i < WAITLIST_CAP; i++) {
+      const slot = document.createElement('span');
+      slot.className = 'slot-empty';
+      slot.textContent = 'libre';
+      row.appendChild(slot);
+    }
+    box.appendChild(row);
+    if (waitlist.length < WAITLIST_CAP && !isUserInSession(s)) {
+      const joinRow = document.createElement('div');
+      joinRow.className = 'join-row';
+      const btn = document.createElement('button');
+      btn.className = 'small subtle';
+      btn.textContent = 'Apuntarme de suplente';
+      btn.addEventListener('click', () => joinSession(docId, 'waitlist', waitlist, WAITLIST_CAP, s));
+      joinRow.appendChild(btn);
+      box.appendChild(joinRow);
+    }
+    return box;
+  }
+
+  // ---------- Render de sesión ----------
   function renderSession(docId, s) {
-    const info = TYPE_INFO[s.type] || { label: 'Otro juego', game: s.game, capacity: s.capacity, teams: false };
+    const info = TYPE_INFO[s.type] || { game: s.game, label: '', icon: '🎲', capacity: s.capacity, teams: false };
     const el = document.createElement('div');
     el.className = 'session-card';
+    el.dataset.id = docId;
 
     const top = document.createElement('div');
     top.className = 'session-top';
@@ -225,7 +353,7 @@
     left.appendChild(when);
     const badge = document.createElement('div');
     badge.className = 'badge';
-    badge.textContent = (info.game || s.game || 'Juego') + ' · ' + (info.label || s.type);
+    badge.textContent = info.icon + ' ' + info.game + (info.label ? ' · ' + info.label : '');
     left.appendChild(badge);
     if (s.note) {
       const note = document.createElement('div');
@@ -257,19 +385,21 @@
       labelA.className = 'team-label a';
       labelA.textContent = 'Equipo A';
       colA.appendChild(labelA);
-      colA.appendChild(renderRoster(docId, 'teamA', s.teamA || [], 5));
+      colA.appendChild(renderRoster(docId, 'teamA', s.teamA || [], 5, s));
       const colB = document.createElement('div');
       const labelB = document.createElement('div');
       labelB.className = 'team-label b';
       labelB.textContent = 'Equipo B';
       colB.appendChild(labelB);
-      colB.appendChild(renderRoster(docId, 'teamB', s.teamB || [], 5));
+      colB.appendChild(renderRoster(docId, 'teamB', s.teamB || [], 5, s));
       teams.appendChild(colA);
       teams.appendChild(colB);
       el.appendChild(teams);
     } else {
-      el.appendChild(renderRoster(docId, 'players', s.players || [], s.capacity));
+      el.appendChild(renderRoster(docId, 'players', s.players || [], s.capacity, s));
     }
+
+    el.appendChild(renderWaitlist(docId, s));
 
     const footer = document.createElement('div');
     footer.className = 'session-footer';
@@ -282,6 +412,7 @@
     return el;
   }
 
+  // ---------- Fecha de borrado / cuenta atrás ----------
   function computeDeleteAt(date, time) {
     const [y, m, d] = date.split('-').map(Number);
     const [hh, mm] = (time || '00:00').split(':').map(Number);
@@ -305,6 +436,7 @@
     return 'Se borra en ' + m + 'm';
   }
 
+  // ---------- Acciones ----------
   function createSession() {
     const date = document.getElementById('f-date').value;
     const time = document.getElementById('f-time').value;
@@ -313,17 +445,14 @@
     const creator = getMyName();
     if (!date) { alert('Elige una fecha.'); return; }
 
-    let session;
+    const info = TYPE_INFO[type];
     const deleteAt = computeDeleteAt(date, time);
-    if (type === 'otro') {
-      const game = document.getElementById('f-game').value.trim() || 'Otro juego';
-      const cap = Math.max(1, Math.min(20, parseInt(document.getElementById('f-cap').value, 10) || 5));
-      session = { date, time, type, game, capacity: cap, teams: false, players: [], note, creator, createdAt: Date.now(), deleteAt };
-    } else {
-      const info = TYPE_INFO[type];
-      session = { date, time, type, game: info.game, capacity: info.capacity, teams: info.teams, note, creator, createdAt: Date.now(), deleteAt };
-      if (info.teams) { session.teamA = []; session.teamB = []; } else { session.players = []; }
-    }
+    const session = {
+      date, time, type, game: info.game, capacity: info.capacity, teams: info.teams,
+      note, creator, createdAt: Date.now(), deleteAt, waitlist: []
+    };
+    if (info.teams) { session.teamA = []; session.teamB = []; } else { session.players = []; }
+
     sessionsRef.add(session).then(() => {
       document.getElementById('f-note').value = '';
     }).catch(() => showBanner('No se ha podido crear la sesión. Revisa la conexión con la base de datos.'));
@@ -333,21 +462,22 @@
     const name = getMyName();
     if (!name) { alert('Escribe tu nombre arriba antes de apuntarte.'); return; }
     if (roster.length >= capacity) { alert('Ese hueco ya está completo.'); return; }
-    if (roster.includes(name)) { alert('Ya estás apuntado ahí.'); return; }
+    const myUid = getMyUid();
+    if (roster.some((e) => normalize(e).uid === myUid)) { alert('Ya estás apuntado ahí.'); return; }
     sessionsRef.doc(docId).update({
-      [teamKey]: firebase.firestore.FieldValue.arrayUnion(name)
+      [teamKey]: firebase.firestore.FieldValue.arrayUnion({ name, uid: myUid })
+    }).then(() => {
+      playJoinSound();
     }).catch(() => showBanner('No se ha podido guardar. Inténtalo de nuevo.'));
   }
 
-  function leaveSession(docId, teamKey, name) {
+  function leaveSession(docId, teamKey, entry) {
     sessionsRef.doc(docId).update({
-      [teamKey]: firebase.firestore.FieldValue.arrayRemove(name)
+      [teamKey]: firebase.firestore.FieldValue.arrayRemove(entry)
     }).catch(() => showBanner('No se ha podido guardar. Inténtalo de nuevo.'));
   }
 
-  document.getElementById('f-type').addEventListener('change', (e) => {
-    document.getElementById('hidden-otro').style.display = e.target.value === 'otro' ? 'block' : 'none';
-  });
+  document.getElementById('f-type').addEventListener('change', () => {}); // reservado por si se necesita en el futuro
   document.getElementById('btn-create').addEventListener('click', createSession);
 
   const savedName = localStorage.getItem('cs-squad-name');
@@ -357,7 +487,15 @@
     try { localStorage.setItem('cs-squad-name', e.target.value.trim()); } catch (err) {}
   });
 
+  // ---------- Lista en vivo ----------
   let latestDocs = [];
+  const wasFullMap = new Map();
+  let firstRender = true;
+
+  function isFull(s) {
+    const filled = s.teams ? ((s.teamA || []).length + (s.teamB || []).length) : (s.players || []).length;
+    return filled >= s.capacity;
+  }
 
   function renderList() {
     const list = document.getElementById('sessions-list');
@@ -366,15 +504,28 @@
     const visible = latestDocs.filter((d) => {
       const expired = d.data.deleteAt && d.data.deleteAt.toDate().getTime() <= now;
       if (expired) {
-        sessionsRef.doc(d.id).delete().catch(() => {}); // limpieza silenciosa, la rechazará si ya no está caducada
+        sessionsRef.doc(d.id).delete().catch(() => {});
       }
       return !expired;
     });
     if (!visible.length) {
       list.innerHTML = '<div class="empty-msg">Todavía no hay sesiones. ¡Crea la primera!</div>';
+      firstRender = false;
       return;
     }
-    visible.forEach((d) => list.appendChild(renderSession(d.id, d.data)));
+    visible.forEach((d) => {
+      const el = renderSession(d.id, d.data);
+      const nowFull = isFull(d.data);
+      const wasFull = wasFullMap.get(d.id) || false;
+      if (nowFull && !wasFull && !firstRender) {
+        el.classList.add('just-completed');
+        playCompleteSound();
+        setTimeout(() => el.classList.remove('just-completed'), 1200);
+      }
+      wasFullMap.set(d.id, nowFull);
+      list.appendChild(el);
+    });
+    firstRender = false;
   }
 
   setInterval(renderList, 60000);
