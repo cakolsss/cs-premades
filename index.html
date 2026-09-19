@@ -240,6 +240,13 @@
     top.appendChild(cap);
     el.appendChild(top);
 
+    if (s.deleteAt) {
+      const countdown = document.createElement('div');
+      countdown.style.cssText = 'font-size:0.72rem;color:var(--muted);margin:-4px 0 10px;';
+      countdown.textContent = fmtCountdown(s.deleteAt);
+      el.appendChild(countdown);
+    }
+
     if (s.teams) {
       const teams = document.createElement('div');
       teams.className = 'teams';
@@ -268,14 +275,32 @@
     creator.className = 'creator-note';
     creator.textContent = s.creator ? ('Creada por ' + s.creator) : '';
     footer.appendChild(creator);
-    const del = document.createElement('button');
-    del.className = 'small ghost-danger';
-    del.textContent = 'Eliminar';
-    del.addEventListener('click', () => deleteSession(docId));
-    footer.appendChild(del);
     el.appendChild(footer);
 
     return el;
+  }
+
+  function computeDeleteAt(date, time) {
+    const [y, m, d] = date.split('-').map(Number);
+    const [hh, mm] = (time || '00:00').split(':').map(Number);
+    const sessionDate = new Date(y, (m || 1) - 1, d || 1, hh || 0, mm || 0);
+    const deleteDate = new Date(sessionDate.getTime() + 24 * 60 * 60 * 1000);
+    return firebase.firestore.Timestamp.fromDate(deleteDate);
+  }
+
+  function fmtCountdown(deleteAt) {
+    if (!deleteAt || !deleteAt.toDate) return '';
+    const ms = deleteAt.toDate().getTime() - Date.now();
+    if (ms <= 0) return 'Borrando…';
+    const totalMin = Math.floor(ms / 60000);
+    const h = Math.floor(totalMin / 60);
+    const m = totalMin % 60;
+    if (h >= 24) {
+      const d = Math.floor(h / 24);
+      return 'Se borra en ' + d + (d === 1 ? ' día' : ' días');
+    }
+    if (h > 0) return 'Se borra en ' + h + 'h ' + m + 'm';
+    return 'Se borra en ' + m + 'm';
   }
 
   function createSession() {
@@ -287,13 +312,14 @@
     if (!date) { alert('Elige una fecha.'); return; }
 
     let session;
+    const deleteAt = computeDeleteAt(date, time);
     if (type === 'otro') {
       const game = document.getElementById('f-game').value.trim() || 'Otro juego';
       const cap = Math.max(1, Math.min(20, parseInt(document.getElementById('f-cap').value, 10) || 5));
-      session = { date, time, type, game, capacity: cap, teams: false, players: [], note, creator, createdAt: Date.now() };
+      session = { date, time, type, game, capacity: cap, teams: false, players: [], note, creator, createdAt: Date.now(), deleteAt };
     } else {
       const info = TYPE_INFO[type];
-      session = { date, time, type, game: info.game, capacity: info.capacity, teams: info.teams, note, creator, createdAt: Date.now() };
+      session = { date, time, type, game: info.game, capacity: info.capacity, teams: info.teams, note, creator, createdAt: Date.now(), deleteAt };
       if (info.teams) { session.teamA = []; session.teamB = []; } else { session.players = []; }
     }
     sessionsRef.add(session).then(() => {
@@ -317,11 +343,6 @@
     }).catch(() => showBanner('No se ha podido guardar. Inténtalo de nuevo.'));
   }
 
-  function deleteSession(docId) {
-    if (!confirm('¿Eliminar esta sesión?')) return;
-    sessionsRef.doc(docId).delete().catch(() => showBanner('No se ha podido eliminar.'));
-  }
-
   document.getElementById('f-type').addEventListener('change', (e) => {
     document.getElementById('hidden-otro').style.display = e.target.value === 'otro' ? 'block' : 'none';
   });
@@ -333,21 +354,37 @@
     try { localStorage.setItem('cs-squad-name', e.target.value.trim()); } catch (err) {}
   });
 
-  sessionsRef.onSnapshot((snap) => {
+  let latestDocs = [];
+
+  function renderList() {
     const list = document.getElementById('sessions-list');
     list.innerHTML = '';
-    if (snap.empty) {
+    const now = Date.now();
+    const visible = latestDocs.filter((d) => {
+      const expired = d.data.deleteAt && d.data.deleteAt.toDate().getTime() <= now;
+      if (expired) {
+        sessionsRef.doc(d.id).delete().catch(() => {}); // limpieza silenciosa, la rechazará si ya no está caducada
+      }
+      return !expired;
+    });
+    if (!visible.length) {
       list.innerHTML = '<div class="empty-msg">Todavía no hay sesiones. ¡Crea la primera!</div>';
       return;
     }
-    const docs = [];
-    snap.forEach((doc) => docs.push({ id: doc.id, data: doc.data() }));
-    docs.sort((a, b) => {
+    visible.forEach((d) => list.appendChild(renderSession(d.id, d.data)));
+  }
+
+  setInterval(renderList, 60000);
+
+  sessionsRef.onSnapshot((snap) => {
+    latestDocs = [];
+    snap.forEach((doc) => latestDocs.push({ id: doc.id, data: doc.data() }));
+    latestDocs.sort((a, b) => {
       const ak = (a.data.date || '9999') + 'T' + (a.data.time || '99:99');
       const bk = (b.data.date || '9999') + 'T' + (b.data.time || '99:99');
       return ak < bk ? -1 : ak > bk ? 1 : 0;
     });
-    docs.forEach((d) => list.appendChild(renderSession(d.id, d.data)));
+    renderList();
   }, (err) => {
     showBanner('No se ha podido conectar con la base de datos. Revisa que la configuración de Firebase esté bien pegada y que Firestore esté activado.');
     console.error(err);
