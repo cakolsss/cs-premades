@@ -94,10 +94,34 @@
   @keyframes fadeInUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
   @keyframes chipPop { 0% { transform: scale(0.5); opacity: 0; } 70% { transform: scale(1.08); opacity: 1; } 100% { transform: scale(1); } }
   @keyframes celebrate { 0% { transform: scale(1); } 20% { transform: scale(1.015); } 40% { transform: scale(0.995); } 60% { transform: scale(1.01); } 100% { transform: scale(1); } }
+
+  .wrap { opacity: 0; }
+  .wrap.reveal { animation: fadeInUp .5s ease forwards; }
+
+  #intro-overlay {
+    position: fixed; inset: 0; z-index: 999;
+    background: radial-gradient(circle at 50% 40%, var(--bg-elev), var(--bg) 75%);
+    display: flex; align-items: center; justify-content: center; flex-direction: column;
+    transition: opacity .45s ease, visibility .45s ease;
+  }
+  #intro-overlay.hide { opacity: 0; visibility: hidden; pointer-events: none; }
+  #intro-icon { font-size: 3.4rem; animation: introBounce 1s ease infinite; margin-bottom: 6px; }
+  #intro-title { display: flex; flex-wrap: wrap; justify-content: center; gap: 2px; font-weight: 800; font-size: 1.35rem; letter-spacing: .02em; color: var(--fg); max-width: 320px; text-align: center; }
+  #intro-title span { display: inline-block; opacity: 0; animation: letterPop .4s ease forwards; }
+  #intro-sub { margin-top: 10px; color: var(--accent); font-weight: 700; font-size: 0.85rem; letter-spacing: .12em; opacity: 0; animation: fadeInUp .5s ease forwards; animation-delay: .9s; }
+  #intro-hint { margin-top: 26px; color: var(--muted); font-size: 0.8rem; opacity: 0; animation: fadeInUp .5s ease forwards, hintPulse 1.6s ease-in-out infinite; animation-delay: 1.5s, 1.5s; }
+  @keyframes hintPulse { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
+  @keyframes introBounce { 0%, 100% { transform: translateY(0) rotate(-4deg); } 50% { transform: translateY(-10px) rotate(4deg); } }
+  @keyframes letterPop { 0% { opacity: 0; transform: translateY(14px) scale(0.6); } 60% { opacity: 1; transform: translateY(-3px) scale(1.08); } 100% { opacity: 1; transform: translateY(0) scale(1); } }
 </style>
 </head>
 <body>
-<div class="wrap">
+<div id="intro-overlay">
+  <div id="intro-icon">🎮</div>
+  <div id="intro-title"></div>
+  <div id="intro-sub">CS SQUAD</div>
+</div>
+<div class="wrap" id="main-wrap">
   <header>
     <button id="theme-toggle" title="Cambiar tema">🌙</button>
     <h1>🎮 CS Squad — Reservas</h1>
@@ -211,6 +235,42 @@
     playTone(659, 0.12, 0.14, 0.09);
     playTone(784, 0.24, 0.22, 0.1);
   }
+  function playIntroSound() {
+    playTone(392, 0, 0.11, 0.07);
+    playTone(494, 0.1, 0.11, 0.07);
+    playTone(587, 0.2, 0.11, 0.07);
+    playTone(784, 0.32, 0.28, 0.09);
+  }
+
+  // ---------- Pantalla de entrada ----------
+  const introOverlay = document.getElementById('intro-overlay');
+  const introTitleEl = document.getElementById('intro-title');
+  const mainWrap = document.getElementById('main-wrap');
+  const introText = 'RESERVA TU HUECO';
+  introText.split('').forEach((ch, i) => {
+    const span = document.createElement('span');
+    span.textContent = ch === ' ' ? '\u00A0' : ch;
+    span.style.animationDelay = (i * 0.045) + 's';
+    introTitleEl.appendChild(span);
+  });
+  const introHint = document.createElement('div');
+  introHint.id = 'intro-hint';
+  introHint.textContent = 'Toca para entrar';
+  introOverlay.appendChild(introHint);
+
+  let introDismissed = false;
+  function dismissIntro() {
+    if (introDismissed) return;
+    introDismissed = true;
+    unlockAudio();
+    playIntroSound();
+    introOverlay.classList.add('hide');
+    mainWrap.classList.add('reveal');
+    setTimeout(() => { introOverlay.style.display = 'none'; }, 500);
+  }
+  introOverlay.addEventListener('click', dismissIntro);
+  introOverlay.addEventListener('touchstart', dismissIntro, { passive: true });
+  setTimeout(dismissIntro, 4500);
 
   // ---------- Utilidades ----------
   function showBanner(msg) {
