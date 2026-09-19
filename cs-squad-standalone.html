@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CS Squad — Reservas</title>
+<style>
+  :root {
+    --bg: #14161a;
+    --bg-elev: #1d2026;
+    --fg: #eef0f3;
+    --muted: #9aa0ab;
+    --border: #30343c;
+    --accent: #ff8a3d;
+    --accent-fg: #1a1200;
+    --accent-soft: #3a2712;
+    --danger: #ff6b6b;
+    --slotA: #6ea8ff;
+    --slotB: #ff8080;
+    --chip-bg: #262a31;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); padding: 20px 14px 60px; line-height: 1.4; }
+  .wrap { max-width: 760px; margin: 0 auto; }
+  header { text-align: center; margin-bottom: 22px; }
+  header h1 { font-size: 1.6rem; margin: 0 0 4px; }
+  header p { color: var(--muted); margin: 0; font-size: 0.95rem; }
+  #banner { display: none; background: var(--accent-soft); border: 1px solid var(--accent); color: var(--fg); padding: 10px 14px; border-radius: 14px; margin-bottom: 16px; font-size: 0.9rem; }
+  .card { background: var(--bg-elev); border: 1px solid var(--border); border-radius: 14px; padding: 18px; margin-bottom: 18px; }
+  .card h2 { margin: 0 0 14px; font-size: 1.05rem; }
+  label { display: block; font-size: 0.8rem; color: var(--muted); margin-bottom: 4px; margin-top: 12px; }
+  label:first-of-type { margin-top: 0; }
+  input, select { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); color: var(--fg); font-size: 0.95rem; }
+  input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .row { display: flex; gap: 10px; }
+  .row > div { flex: 1; min-width: 0; }
+  button { cursor: pointer; border: none; border-radius: 10px; padding: 10px 16px; font-size: 0.9rem; font-weight: 600; background: var(--accent); color: var(--accent-fg); }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  button.small { padding: 5px 10px; font-size: 0.78rem; }
+  button.full { width: 100%; margin-top: 16px; }
+  button.ghost-danger { background: transparent; color: var(--danger); border: 1px solid var(--danger); }
+  #hidden-otro { display: none; }
+  #sessions-list { display: flex; flex-direction: column; gap: 14px; }
+  .empty-msg { color: var(--muted); text-align: center; padding: 20px 0; font-size: 0.9rem; }
+  .session-card { background: var(--bg-elev); border: 1px solid var(--border); border-radius: 14px; padding: 16px; }
+  .session-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+  .session-when { font-weight: 700; font-size: 1rem; }
+  .session-when .rel { color: var(--accent); font-weight: 600; font-size: 0.8rem; margin-left: 6px; }
+  .badge { display: inline-block; background: var(--chip-bg); color: var(--fg); border-radius: 999px; padding: 3px 10px; font-size: 0.75rem; font-weight: 600; margin-top: 4px; }
+  .capacity { font-size: 0.8rem; color: var(--muted); white-space: nowrap; }
+  .teams { display: flex; gap: 12px; }
+  .teams > div { flex: 1; min-width: 0; }
+  .team-label { font-size: 0.78rem; font-weight: 700; margin-bottom: 6px; }
+  .team-label.a { color: var(--slotA); }
+  .team-label.b { color: var(--slotB); }
+  .players { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+  .chip { background: var(--chip-bg); border-radius: 999px; padding: 4px 6px 4px 12px; font-size: 0.82rem; display: flex; align-items: center; gap: 6px; }
+  .chip button { background: transparent; color: var(--muted); padding: 0 4px; font-size: 0.9rem; font-weight: 700; border-radius: 50%; line-height: 1; }
+  .chip button:hover { color: var(--danger); }
+  .slot-empty { border: 1px dashed var(--border); border-radius: 999px; padding: 4px 12px; font-size: 0.82rem; color: var(--muted); }
+  .join-row { display: flex; gap: 8px; margin-top: 8px; }
+  .session-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border); }
+  .creator-note { font-size: 0.75rem; color: var(--muted); }
+  .full-tag { color: var(--danger); font-weight: 700; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🎮 CS Squad — Reservas</h1>
+    <p>Apúntate, monta una premade o propón un 5vs5 con la peña del Discord</p>
+  </header>
+
+  <div id="banner"></div>
+
+  <div class="card">
+    <h2>Tu nombre</h2>
+    <input id="my-name" type="text" placeholder="Como te llaman en el Discord" maxlength="24">
+    <p style="font-size:0.78rem;color:var(--muted);margin:6px 0 0;">Se guarda solo en este dispositivo.</p>
+  </div>
+
+  <div class="card">
+    <h2>Crear nueva sesión</h2>
+    <div class="row">
+      <div><label for="f-date">Fecha</label><input id="f-date" type="date"></div>
+      <div><label for="f-time">Hora</label><input id="f-time" type="time"></div>
+    </div>
+    <label for="f-type">Tipo</label>
+    <select id="f-type">
+      <option value="premadeA">Premade A (CS, 5 jugadores)</option>
+      <option value="premadeB">Premade B (CS, 5 jugadores)</option>
+      <option value="fivevfive">5 vs 5 interno (CS, 10 jugadores)</option>
+      <option value="otro">Otro juego</option>
+    </select>
+    <div id="hidden-otro">
+      <div class="row">
+        <div><label for="f-game">Juego</label><input id="f-game" type="text" placeholder="Ej: Valorant"></div>
+        <div><label for="f-cap">Jugadores</label><input id="f-cap" type="number" min="1" max="20" value="5"></div>
+      </div>
+    </div>
+    <label for="f-note">Nota (opcional)</label>
+    <input id="f-note" type="text" placeholder="Ej: ranked, solo pistoleo, etc." maxlength="80">
+    <button class="full" id="btn-create">Crear sesión</button>
+  </div>
+
+  <div class="card">
+    <h2>Sesiones programadas</h2>
+    <div id="sessions-list"></div>
+  </div>
+</div>
+
+<!-- ====== FIREBASE ====== -->
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script>
+  // 1) PEGA AQUÍ TU CONFIGURACIÓN DE FIREBASE (paso 4 de las instrucciones)
+  const firebaseConfig = {
+    apiKey: "AIzaSyC6A3WQI6t7BXZs7AaNMgsCsWj6BlLkXFg",
+    authDomain: "premades-cs.firebaseapp.com",
+    projectId: "premades-cs",
+    storageBucket: "premades-cs.firebasestorage.app",
+    messagingSenderId: "456607392937",
+    appId: "1:456607392937:web:e2f97f610ed89d0deab5b8"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+  const sessionsRef = db.collection('sessions');
+</script>
+
+<script>
+(function () {
+  const TYPE_INFO = {
+    premadeA: { label: 'Premade A', game: 'Counter-Strike', capacity: 5, teams: false },
+    premadeB: { label: 'Premade B', game: 'Counter-Strike', capacity: 5, teams: false },
+    fivevfive: { label: '5 vs 5 interno', game: 'Counter-Strike', capacity: 10, teams: true },
+  };
+
+  function showBanner(msg) {
+    const b = document.getElementById('banner');
+    b.textContent = msg;
+    b.style.display = 'block';
+  }
+
+  function getMyName() { return document.getElementById('my-name').value.trim(); }
+
+  function fmtWhen(dateStr, timeStr) {
+    if (!dateStr) return 'Sin fecha';
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const dt = new Date(y, (m || 1) - 1, d || 1);
+    const dias = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+    const meses = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+    let s = dias[dt.getDay()] + ' ' + dt.getDate() + ' ' + meses[dt.getMonth()];
+    if (timeStr) s += ' · ' + timeStr;
+    return s;
+  }
+
+  function relTag(dateStr) {
+    if (!dateStr) return '';
+    const today = new Date(); today.setHours(0,0,0,0);
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const dt = new Date(y, (m || 1) - 1, d || 1);
+    const diff = Math.round((dt - today) / 86400000);
+    if (diff === 0) return 'HOY';
+    if (diff === 1) return 'MAÑANA';
+    if (diff < 0) return 'PASADA';
+    return '';
+  }
+
+  function renderChip(docId, teamKey, name, roster) {
+    const chip = document.createElement('span');
+    chip.className = 'chip';
+    const span = document.createElement('span');
+    span.textContent = name;
+    chip.appendChild(span);
+    const btn = document.createElement('button');
+    btn.textContent = '×';
+    btn.title = 'Salir';
+    btn.addEventListener('click', () => leaveSession(docId, teamKey, name, roster));
+    chip.appendChild(btn);
+    return chip;
+  }
+
+  function renderRoster(docId, teamKey, roster, capacity) {
+    const box = document.createElement('div');
+    const playersDiv = document.createElement('div');
+    playersDiv.className = 'players';
+    roster.forEach((name) => playersDiv.appendChild(renderChip(docId, teamKey, name, roster)));
+    for (let i = roster.length; i < capacity; i++) {
+      const slot = document.createElement('span');
+      slot.className = 'slot-empty';
+      slot.textContent = 'libre';
+      playersDiv.appendChild(slot);
+    }
+    box.appendChild(playersDiv);
+    if (roster.length < capacity) {
+      const joinRow = document.createElement('div');
+      joinRow.className = 'join-row';
+      const btn = document.createElement('button');
+      btn.className = 'small';
+      btn.textContent = 'Unirme';
+      btn.addEventListener('click', () => joinSession(docId, teamKey, roster, capacity));
+      joinRow.appendChild(btn);
+      box.appendChild(joinRow);
+    }
+    return box;
+  }
+
+  function renderSession(docId, s) {
+    const info = TYPE_INFO[s.type] || { label: 'Otro juego', game: s.game, capacity: s.capacity, teams: false };
+    const el = document.createElement('div');
+    el.className = 'session-card';
+
+    const top = document.createElement('div');
+    top.className = 'session-top';
+    const left = document.createElement('div');
+    const when = document.createElement('div');
+    when.className = 'session-when';
+    when.textContent = fmtWhen(s.date, s.time);
+    const rel = relTag(s.date);
+    if (rel) { const r = document.createElement('span'); r.className = 'rel'; r.textContent = rel; when.appendChild(r); }
+    left.appendChild(when);
+    const badge = document.createElement('div');
+    badge.className = 'badge';
+    badge.textContent = (info.game || s.game || 'Juego') + ' · ' + (info.label || s.type);
+    left.appendChild(badge);
+    if (s.note) {
+      const note = document.createElement('div');
+      note.style.cssText = 'font-size:0.8rem;color:var(--muted);margin-top:4px;';
+      note.textContent = s.note;
+      left.appendChild(note);
+    }
+    top.appendChild(left);
+
+    const filled = s.teams ? ((s.teamA || []).length + (s.teamB || []).length) : (s.players || []).length;
+    const cap = document.createElement('div');
+    cap.className = 'capacity';
+    cap.innerHTML = filled >= s.capacity ? '<span class="full-tag">COMPLETO</span>' : (filled + '/' + s.capacity);
+    top.appendChild(cap);
+    el.appendChild(top);
+
+    if (s.teams) {
+      const teams = document.createElement('div');
+      teams.className = 'teams';
+      const colA = document.createElement('div');
+      const labelA = document.createElement('div');
+      labelA.className = 'team-label a';
+      labelA.textContent = 'Equipo A';
+      colA.appendChild(labelA);
+      colA.appendChild(renderRoster(docId, 'teamA', s.teamA || [], 5));
+      const colB = document.createElement('div');
+      const labelB = document.createElement('div');
+      labelB.className = 'team-label b';
+      labelB.textContent = 'Equipo B';
+      colB.appendChild(labelB);
+      colB.appendChild(renderRoster(docId, 'teamB', s.teamB || [], 5));
+      teams.appendChild(colA);
+      teams.appendChild(colB);
+      el.appendChild(teams);
+    } else {
+      el.appendChild(renderRoster(docId, 'players', s.players || [], s.capacity));
+    }
+
+    const footer = document.createElement('div');
+    footer.className = 'session-footer';
+    const creator = document.createElement('span');
+    creator.className = 'creator-note';
+    creator.textContent = s.creator ? ('Creada por ' + s.creator) : '';
+    footer.appendChild(creator);
+    const del = document.createElement('button');
+    del.className = 'small ghost-danger';
+    del.textContent = 'Eliminar';
+    del.addEventListener('click', () => deleteSession(docId));
+    footer.appendChild(del);
+    el.appendChild(footer);
+
+    return el;
+  }
+
+  function createSession() {
+    const date = document.getElementById('f-date').value;
+    const time = document.getElementById('f-time').value;
+    const type = document.getElementById('f-type').value;
+    const note = document.getElementById('f-note').value.trim();
+    const creator = getMyName();
+    if (!date) { alert('Elige una fecha.'); return; }
+
+    let session;
+    if (type === 'otro') {
+      const game = document.getElementById('f-game').value.trim() || 'Otro juego';
+      const cap = Math.max(1, Math.min(20, parseInt(document.getElementById('f-cap').value, 10) || 5));
+      session = { date, time, type, game, capacity: cap, teams: false, players: [], note, creator, createdAt: Date.now() };
+    } else {
+      const info = TYPE_INFO[type];
+      session = { date, time, type, game: info.game, capacity: info.capacity, teams: info.teams, note, creator, createdAt: Date.now() };
+      if (info.teams) { session.teamA = []; session.teamB = []; } else { session.players = []; }
+    }
+    sessionsRef.add(session).then(() => {
+      document.getElementById('f-note').value = '';
+    }).catch(() => showBanner('No se ha podido crear la sesión. Revisa la conexión con la base de datos.'));
+  }
+
+  function joinSession(docId, teamKey, roster, capacity) {
+    const name = getMyName();
+    if (!name) { alert('Escribe tu nombre arriba antes de apuntarte.'); return; }
+    if (roster.length >= capacity) { alert('Ese hueco ya está completo.'); return; }
+    if (roster.includes(name)) { alert('Ya estás apuntado ahí.'); return; }
+    sessionsRef.doc(docId).update({
+      [teamKey]: firebase.firestore.FieldValue.arrayUnion(name)
+    }).catch(() => showBanner('No se ha podido guardar. Inténtalo de nuevo.'));
+  }
+
+  function leaveSession(docId, teamKey, name) {
+    sessionsRef.doc(docId).update({
+      [teamKey]: firebase.firestore.FieldValue.arrayRemove(name)
+    }).catch(() => showBanner('No se ha podido guardar. Inténtalo de nuevo.'));
+  }
+
+  function deleteSession(docId) {
+    if (!confirm('¿Eliminar esta sesión?')) return;
+    sessionsRef.doc(docId).delete().catch(() => showBanner('No se ha podido eliminar.'));
+  }
+
+  document.getElementById('f-type').addEventListener('change', (e) => {
+    document.getElementById('hidden-otro').style.display = e.target.value === 'otro' ? 'block' : 'none';
+  });
+  document.getElementById('btn-create').addEventListener('click', createSession);
+
+  const savedName = localStorage.getItem('cs-squad-name');
+  if (savedName) document.getElementById('my-name').value = savedName;
+  document.getElementById('my-name').addEventListener('change', (e) => {
+    try { localStorage.setItem('cs-squad-name', e.target.value.trim()); } catch (err) {}
+  });
+
+  sessionsRef.orderBy('date').orderBy('time').onSnapshot((snap) => {
+    const list = document.getElementById('sessions-list');
+    list.innerHTML = '';
+    if (snap.empty) {
+      list.innerHTML = '<div class="empty-msg">Todavía no hay sesiones. ¡Crea la primera!</div>';
+      return;
+    }
+    snap.forEach((doc) => list.appendChild(renderSession(doc.id, doc.data())));
+  }, (err) => {
+    showBanner('No se ha podido conectar con la base de datos. Revisa que la configuración de Firebase esté bien pegada y que Firestore esté activado.');
+    console.error(err);
+  });
+})();
+</script>
+</body>
+</html>
