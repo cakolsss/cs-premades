@@ -333,14 +333,21 @@
     try { localStorage.setItem('cs-squad-name', e.target.value.trim()); } catch (err) {}
   });
 
-  sessionsRef.orderBy('date').orderBy('time').onSnapshot((snap) => {
+  sessionsRef.onSnapshot((snap) => {
     const list = document.getElementById('sessions-list');
     list.innerHTML = '';
     if (snap.empty) {
       list.innerHTML = '<div class="empty-msg">Todavía no hay sesiones. ¡Crea la primera!</div>';
       return;
     }
-    snap.forEach((doc) => list.appendChild(renderSession(doc.id, doc.data())));
+    const docs = [];
+    snap.forEach((doc) => docs.push({ id: doc.id, data: doc.data() }));
+    docs.sort((a, b) => {
+      const ak = (a.data.date || '9999') + 'T' + (a.data.time || '99:99');
+      const bk = (b.data.date || '9999') + 'T' + (b.data.time || '99:99');
+      return ak < bk ? -1 : ak > bk ? 1 : 0;
+    });
+    docs.forEach((d) => list.appendChild(renderSession(d.id, d.data)));
   }, (err) => {
     showBanner('No se ha podido conectar con la base de datos. Revisa que la configuración de Firebase esté bien pegada y que Firestore esté activado.');
     console.error(err);
