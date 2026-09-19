@@ -698,7 +698,7 @@
     if (s.deleteAt) {
       const countdown = document.createElement('div');
       countdown.style.cssText = 'font-size:0.72rem;color:var(--muted);margin:-4px 0 10px;';
-      countdown.textContent = fmtCountdown(s.deleteAt);
+      countdown.textContent = fmtCountdown(s.date ? computeDeleteAt(s.date, s.time) : s.deleteAt);
       el.appendChild(countdown);
     }
 
@@ -823,17 +823,17 @@
     list.innerHTML = '';
     const now = Date.now();
     const visible = latestDocs.filter((d) => {
-      let deleteAtMs;
-      if (d.data.deleteAt && d.data.deleteAt.toDate) {
-        deleteAtMs = d.data.deleteAt.toDate().getTime();
-      } else if (d.data.date) {
-        deleteAtMs = computeDeleteAt(d.data.date, d.data.time).toDate().getTime();
-      } else {
-        deleteAtMs = 0; // sin fecha reconocible: se considera caducada
-      }
-      const expired = deleteAtMs <= now;
+      const freshMs = d.data.date ? computeDeleteAt(d.data.date, d.data.time).toDate().getTime() : 0;
+      const expired = freshMs <= now;
       if (expired) {
-        sessionsRef.doc(d.id).delete().catch(() => {});
+        const storedMs = (d.data.deleteAt && d.data.deleteAt.toDate) ? d.data.deleteAt.toDate().getTime() : 0;
+        if (storedMs > now) {
+          sessionsRef.doc(d.id).update({ deleteAt: firebase.firestore.Timestamp.fromDate(new Date(freshMs)) })
+            .then(() => sessionsRef.doc(d.id).delete())
+            .catch(() => {});
+        } else {
+          sessionsRef.doc(d.id).delete().catch(() => {});
+        }
       }
       return !expired;
     });
