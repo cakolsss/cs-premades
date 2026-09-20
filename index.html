@@ -164,6 +164,25 @@
   }
 
   #bg-dust { position: fixed; inset: 0; overflow: hidden; z-index: -1; pointer-events: none; }
+
+  #twitch-widget {
+    position: fixed; left: 16px; bottom: 16px; z-index: 600; width: 320px;
+    background: var(--bg-elev); border: 1px solid var(--border); border-radius: 12px;
+    overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,.35); display: none;
+  }
+  #twitch-widget.visible { display: block; }
+  #twitch-widget-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 10px; background: var(--chip-bg); cursor: grab; user-select: none;
+    font-size: 0.82rem; font-weight: 700; color: var(--fg);
+  }
+  #twitch-widget-header:active { cursor: grabbing; }
+  #twitch-close { background: transparent; color: var(--muted); font-size: 1.1rem; padding: 0 4px; border-radius: 6px; }
+  #twitch-close:hover { color: var(--danger); }
+  .twitch-embed-box { width: 100%; aspect-ratio: 16 / 9; display: none; }
+  .twitch-embed-box.live { display: block; }
+  .twitch-embed-label { font-size: 0.7rem; color: var(--muted); padding: 4px 8px 0; }
+  @media (max-width: 480px) { #twitch-widget { width: 88vw; left: 6vw; } }
   .dust-mote { position: absolute; border-radius: 50%; background: var(--accent); opacity: 0.08; filter: blur(1px); animation: dustDrift linear infinite; }
   @keyframes dustDrift {
     0% { transform: translateY(0) translateX(0); }
@@ -214,6 +233,7 @@
   @keyframes adWobble { 0%, 100% { transform: rotate(-5deg); } 50% { transform: rotate(5deg); } }
   @keyframes adShimmer { 0%, 100% { filter: brightness(1) drop-shadow(0 0 0 transparent); transform: scale(1); } 50% { filter: brightness(1.35) drop-shadow(0 0 6px gold); transform: scale(1.1); } }
 </style>
+<script src="https://embed.twitch.tv/embed/v1.js"></script>
 </head>
 <body>
 <div id="intro-overlay">
@@ -246,6 +266,14 @@
   <div id="sherry-count"></div>
 </div>
 <div id="bg-dust"></div>
+
+<div id="twitch-widget">
+  <div id="twitch-widget-header">
+    <span>🔴 En directo</span>
+    <button id="twitch-close" title="Cerrar">×</button>
+  </div>
+  <div id="twitch-embeds"></div>
+</div>
 <div class="side-ad side-ad-left" id="ad-left"></div>
 <div class="side-ad side-ad-right" id="ad-right"></div>
 
@@ -253,7 +281,6 @@
   <header>
     <button id="theme-toggle" title="Cambiar tema">🌙</button>
     <h1>🎮 CS Squad — Reservas</h1>
-    <p>Apúntate, monta una premade o propón partidas con la peña del Discord</p>
   </header>
 
   <div id="summary-bar" class="summary-bar"></div>
@@ -533,6 +560,100 @@
     if (masterGain) masterGain.gain.value = radioVolValue;
     try { localStorage.setItem('cs-squad-radio-vol', String(radioVolValue)); } catch (e) {}
   });
+
+  // ---------- Twitch en directo ----------
+  const TWITCH_CHANNELS = ['tman1aa', 'f1_brokiss'];
+
+  const twitchWidget = document.getElementById('twitch-widget');
+  const twitchClose = document.getElementById('twitch-close');
+  const twitchHeader = document.getElementById('twitch-widget-header');
+  const twitchEmbedsBox = document.getElementById('twitch-embeds');
+  let twitchClosedByUser = sessionStorage.getItem('cs-squad-twitch-closed') === '1';
+  const twitchOnline = new Map();
+
+  function updateTwitchWidgetVisibility() {
+    const anyOnline = [...twitchOnline.values()].some(Boolean);
+    if (anyOnline && !twitchClosedByUser) {
+      twitchWidget.classList.add('visible');
+    } else {
+      twitchWidget.classList.remove('visible');
+    }
+  }
+
+  twitchClose.addEventListener('click', () => {
+    twitchClosedByUser = true;
+    try { sessionStorage.setItem('cs-squad-twitch-closed', '1'); } catch (e) {}
+    twitchWidget.classList.remove('visible');
+  });
+
+  if (window.Twitch) {
+    TWITCH_CHANNELS.forEach((channel) => {
+      const label = document.createElement('div');
+      label.className = 'twitch-embed-label';
+      label.textContent = channel;
+      label.style.display = 'none';
+      const box = document.createElement('div');
+      box.className = 'twitch-embed-box';
+      box.id = 'twitch-embed-' + channel;
+      twitchEmbedsBox.appendChild(label);
+      twitchEmbedsBox.appendChild(box);
+      twitchOnline.set(channel, false);
+
+      const embed = new Twitch.Embed(box.id, {
+        width: '100%',
+        height: '100%',
+        channel: channel,
+        layout: 'video',
+        autoplay: true,
+        muted: true,
+        parent: [window.location.hostname]
+      });
+      embed.addEventListener(Twitch.Embed.VIDEO_READY, () => {
+        const player = embed.getPlayer();
+        player.addEventListener(Twitch.Player.ONLINE, () => {
+          twitchOnline.set(channel, true);
+          box.classList.add('live');
+          label.style.display = 'block';
+          updateTwitchWidgetVisibility();
+        });
+        player.addEventListener(Twitch.Player.OFFLINE, () => {
+          twitchOnline.set(channel, false);
+          box.classList.remove('live');
+          label.style.display = 'none';
+          updateTwitchWidgetVisibility();
+        });
+      });
+    });
+  }
+
+  // Arrastrar el widget para moverlo a un lado
+  (function makeDraggable() {
+    let dragging = false, offsetX = 0, offsetY = 0;
+    function startDrag(x, y) {
+      dragging = true;
+      const rect = twitchWidget.getBoundingClientRect();
+      offsetX = x - rect.left;
+      offsetY = y - rect.top;
+      twitchWidget.style.left = rect.left + 'px';
+      twitchWidget.style.top = rect.top + 'px';
+      twitchWidget.style.bottom = 'auto';
+      twitchWidget.style.right = 'auto';
+    }
+    function moveDrag(x, y) {
+      if (!dragging) return;
+      const maxX = window.innerWidth - twitchWidget.offsetWidth - 4;
+      const maxY = window.innerHeight - twitchWidget.offsetHeight - 4;
+      twitchWidget.style.left = Math.min(Math.max(0, x - offsetX), maxX) + 'px';
+      twitchWidget.style.top = Math.min(Math.max(0, y - offsetY), maxY) + 'px';
+    }
+    function endDrag() { dragging = false; }
+    twitchHeader.addEventListener('mousedown', (e) => startDrag(e.clientX, e.clientY));
+    document.addEventListener('mousemove', (e) => moveDrag(e.clientX, e.clientY));
+    document.addEventListener('mouseup', endDrag);
+    twitchHeader.addEventListener('touchstart', (e) => { const t = e.touches[0]; startDrag(t.clientX, t.clientY); }, { passive: true });
+    document.addEventListener('touchmove', (e) => { const t = e.touches[0]; moveDrag(t.clientX, t.clientY); }, { passive: true });
+    document.addEventListener('touchend', endDrag);
+  })();
 
   // ---------- Polvo de fondo sutil ----------
   (function initDust() {
