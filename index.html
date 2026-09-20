@@ -182,20 +182,6 @@
   .twitch-embed-box { width: 100%; aspect-ratio: 16 / 9; display: none; }
   .twitch-embed-box.live { display: block; }
   .twitch-embed-label { font-size: 0.7rem; color: var(--muted); padding: 4px 8px 0; }
-
-  #random-popup {
-    position: fixed; z-index: 700; width: 300px; max-width: 88vw;
-    background: var(--bg-elev); border: 1px solid var(--border); border-radius: 12px;
-    box-shadow: 0 12px 30px rgba(0,0,0,.4); display: none; overflow: hidden;
-    animation: fadeInUp .4s ease;
-  }
-  #random-popup.visible { display: block; }
-  #random-popup-close {
-    position: absolute; top: 4px; right: 4px; z-index: 2;
-    background: rgba(0,0,0,.5); color: #fff; width: 24px; height: 24px; border-radius: 50%;
-    font-size: 1rem; padding: 0; line-height: 1;
-  }
-  #random-popup-body { max-height: 70vh; overflow: hidden; }
   @media (max-width: 480px) { #twitch-widget { width: 88vw; left: 6vw; } }
   .dust-mote { position: absolute; border-radius: 50%; background: var(--accent); opacity: 0.08; filter: blur(1px); animation: dustDrift linear infinite; }
   @keyframes dustDrift {
@@ -248,7 +234,6 @@
   @keyframes adShimmer { 0%, 100% { filter: brightness(1) drop-shadow(0 0 0 transparent); transform: scale(1); } 50% { filter: brightness(1.35) drop-shadow(0 0 6px gold); transform: scale(1.1); } }
 </style>
 <script src="https://embed.twitch.tv/embed/v1.js"></script>
-<script src="https://platform.twitter.com/widgets.js" charset="utf-8" async></script>
 </head>
 <body>
 <div id="intro-overlay">
@@ -281,11 +266,6 @@
   <div id="sherry-count"></div>
 </div>
 <div id="bg-dust"></div>
-
-<div id="random-popup">
-  <button id="random-popup-close" title="Cerrar">×</button>
-  <div id="random-popup-body"></div>
-</div>
 
 <div id="twitch-widget">
   <div id="twitch-widget-header">
@@ -674,56 +654,6 @@
     document.addEventListener('touchmove', (e) => { const t = e.touches[0]; moveDrag(t.clientX, t.clientY); }, { passive: true });
     document.addEventListener('touchend', endDrag);
   })();
-
-  // ---------- Popup aleatorio (X) ----------
-  const RANDOM_TWEET_ID = '2101409224635060542';
-  const randomPopup = document.getElementById('random-popup');
-  const randomPopupBody = document.getElementById('random-popup-body');
-  const randomPopupClose = document.getElementById('random-popup-close');
-  let randomPopupLoaded = false;
-
-  function positionRandomPopup() {
-    const w = randomPopup.offsetWidth || 300;
-    const h = randomPopup.offsetHeight || 350;
-    const maxX = Math.max(0, window.innerWidth - w - 10);
-    const maxY = Math.max(0, window.innerHeight - h - 10);
-    randomPopup.style.left = Math.floor(Math.random() * maxX) + 'px';
-    randomPopup.style.top = Math.floor(Math.random() * maxY) + 'px';
-  }
-
-  function showRandomPopup() {
-    if (!window.twttr || !twttr.widgets) return;
-    positionRandomPopup();
-    randomPopup.classList.add('visible');
-    if (!randomPopupLoaded) {
-      randomPopupLoaded = true;
-      twttr.widgets.createTweet(RANDOM_TWEET_ID, randomPopupBody, {
-        theme: root.getAttribute('data-theme') === 'light' ? 'light' : 'dark',
-        dnt: true
-      }).then((el) => {
-        positionRandomPopup();
-        if (!el) hideRandomPopup();
-      });
-    } else {
-      positionRandomPopup();
-    }
-  }
-
-  function hideRandomPopup() {
-    randomPopup.classList.remove('visible');
-  }
-
-  randomPopupClose.addEventListener('click', hideRandomPopup);
-
-  function scheduleRandomPopup() {
-    const delay = 60000 + Math.random() * 120000; // entre 1 y 3 minutos
-    setTimeout(() => {
-      showRandomPopup();
-      setTimeout(hideRandomPopup, 15000);
-      scheduleRandomPopup();
-    }, delay);
-  }
-  scheduleRandomPopup();
 
   // ---------- Polvo de fondo sutil ----------
   (function initDust() {
