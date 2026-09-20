@@ -55,6 +55,14 @@
   .card:nth-of-type(2) { animation-delay: .05s; }
   .card:nth-of-type(3) { animation-delay: .1s; }
   .card h2 { margin: 0 0 14px; font-size: 1.05rem; }
+  .collapsible-header {
+    width: 100%; background: none; border: none; padding: 0; margin: 0 0 0; cursor: pointer;
+    display: flex; align-items: center; justify-content: space-between; color: var(--fg);
+  }
+  #create-chevron { transition: transform .25s; color: var(--muted); font-size: 1.1rem; }
+  #create-chevron.open { transform: rotate(180deg); }
+  .collapsible-body { max-height: 0; overflow: hidden; transition: max-height .3s ease; }
+  .collapsible-body.open { max-height: 500px; margin-top: 14px; }
   label { display: block; font-size: 0.8rem; color: var(--muted); margin-bottom: 4px; margin-top: 12px; }
   label:first-of-type { margin-top: 0; }
   input, select { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); color: var(--fg); font-size: 0.95rem; }
@@ -96,11 +104,11 @@
   .pill { background: var(--chip-bg); border-radius: 999px; padding: 6px 12px; font-size: 0.78rem; font-weight: 600; }
   .pill.pill-accent { background: var(--accent-soft); color: var(--accent); }
   #radio-player {
-    position: fixed; left: 58px; top: 12px; z-index: 500;
+    position: fixed; right: 12px; top: 12px; z-index: 500;
     display: flex; align-items: center; gap: 5px;
     background: var(--bg-elev); border: 1px solid var(--border); border-radius: 999px;
     padding: 5px 8px; box-shadow: 0 4px 12px rgba(0,0,0,.2);
-    max-width: calc(100vw - 110px);
+    max-width: calc(100vw - 24px);
   }
   #radio-toggle { width: 26px; height: 26px; border-radius: 50%; padding: 0; font-size: 0.75rem; flex-shrink: 0; }
   #radio-info { display: none; }
@@ -129,7 +137,8 @@
   }
   #intro-overlay.hide { opacity: 0; visibility: hidden; pointer-events: none; }
   #intro-icon { font-size: 3.4rem; animation: introBounce 1s ease infinite; margin-bottom: 6px; }
-  #sherry-dog { margin-top: 18px; cursor: pointer; animation: sherryIdle 2.4s ease-in-out infinite; opacity: 0; animation: fadeInUp .5s ease forwards, sherryIdle 2.4s ease-in-out infinite 1.3s; animation-delay: 1.1s, 1.1s; }
+  #sherry-wrap { opacity: 0; animation: fadeInUp .5s ease forwards; animation-delay: 1.1s; }
+  #sherry-dog { margin-top: 18px; cursor: pointer; animation: sherryIdle 2.4s ease-in-out infinite; }
   #sherry-dog.sherry-happy { animation: sherryWiggle .6s ease 2; }
   #sherry-dog.mood-excited #sherry-tail { animation: tailWagFast .25s ease-in-out infinite; transform-origin: 150px 140px; }
   #sherry-dog.mood-sleepy { animation-duration: 4.5s !important; }
@@ -268,22 +277,27 @@
   </div>
 
   <div class="card">
-    <h2>Crear nueva sesión</h2>
-    <div class="row">
-      <div><label for="f-date">Fecha</label><input id="f-date" type="date"></div>
-      <div><label for="f-time">Hora</label><input id="f-time" type="time"></div>
+    <button id="create-toggle" class="collapsible-header">
+      <h2 style="margin:0;">Crear nueva sesión</h2>
+      <span id="create-chevron">▾</span>
+    </button>
+    <div id="create-body" class="collapsible-body">
+      <div class="row">
+        <div><label for="f-date">Fecha</label><input id="f-date" type="date"></div>
+        <div><label for="f-time">Hora</label><input id="f-time" type="time"></div>
+      </div>
+      <label for="f-type">Tipo</label>
+      <select id="f-type">
+        <option value="premadeA">🔫 Premade A (CS2, 5)</option>
+        <option value="premadeB">🔫 Premade B (CS2, 5)</option>
+        <option value="fivevfive">🔫 5 vs 5 interno (CS2, 10)</option>
+        <option value="pummel">🥊 Pummel Party (10)</option>
+        <option value="picopark">🧩 Pico Park (10)</option>
+      </select>
+      <label for="f-note">Nota (opcional)</label>
+      <input id="f-note" type="text" placeholder="Ej: ranked, solo pistoleo, etc." maxlength="80">
+      <button class="full" id="btn-create">Crear sesión</button>
     </div>
-    <label for="f-type">Tipo</label>
-    <select id="f-type">
-      <option value="premadeA">🔫 Premade A (CS2, 5)</option>
-      <option value="premadeB">🔫 Premade B (CS2, 5)</option>
-      <option value="fivevfive">🔫 5 vs 5 interno (CS2, 10)</option>
-      <option value="pummel">🥊 Pummel Party (10)</option>
-      <option value="picopark">🧩 Pico Park (10)</option>
-    </select>
-    <label for="f-note">Nota (opcional)</label>
-    <input id="f-note" type="text" placeholder="Ej: ranked, solo pistoleo, etc." maxlength="80">
-    <button class="full" id="btn-create">Crear sesión</button>
   </div>
 
   <div class="card">
@@ -456,8 +470,8 @@
       osc.type = mood.wave;
       osc.frequency.value = freq;
       gain.gain.setValueAtTime(0, now);
-      gain.gain.linearRampToValueAtTime(0.05, now + 0.7);
-      gain.gain.linearRampToValueAtTime(0.05, now + dur - 0.6);
+      gain.gain.linearRampToValueAtTime(0.05, now + 0.06);
+      gain.gain.linearRampToValueAtTime(0.05, now + dur - 0.3);
       gain.gain.linearRampToValueAtTime(0, now + dur);
       osc.connect(gain).connect(masterGain);
       osc.start(now);
@@ -907,9 +921,14 @@
     const note = document.getElementById('f-note').value.trim();
     const creator = getMyName();
     if (!date) { alert('Elige una fecha.'); return; }
+    if (!time) { alert('Elige una hora.'); return; }
 
     const info = TYPE_INFO[type];
     const deleteAt = computeDeleteAt(date, time);
+    if (deleteAt.toDate().getTime() <= Date.now()) {
+      alert('Esa fecha/hora ya ha pasado (o pasará en menos de 1h), así que la sesión se borraría nada más crearla. Elige una fecha/hora futura.');
+      return;
+    }
     const session = {
       date, time, type, game: info.game, capacity: info.capacity, teams: info.teams,
       note, creator, createdAt: Date.now(), deleteAt, waitlist: []
@@ -942,6 +961,14 @@
 
   document.getElementById('f-type').addEventListener('change', () => {}); // reservado por si se necesita en el futuro
   document.getElementById('btn-create').addEventListener('click', createSession);
+
+  const createToggle = document.getElementById('create-toggle');
+  const createBody = document.getElementById('create-body');
+  const createChevron = document.getElementById('create-chevron');
+  createToggle.addEventListener('click', () => {
+    createBody.classList.toggle('open');
+    createChevron.classList.toggle('open');
+  });
 
   const savedName = localStorage.getItem('cs-squad-name');
   if (savedName) document.getElementById('my-name').value = savedName;
